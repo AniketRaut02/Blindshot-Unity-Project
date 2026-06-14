@@ -1,0 +1,22 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5e1822474a97f244ca9d94a73d3d29c5, type: 3}
+  m_Name: CameraSettings_Default
+  m_EditorClassIdentifier: 
+  ShoulderOffset: {x: 0.5, y: 1.5, z: -0.15}
+  VerticalArmLength: 0.25
+  CameraDistance: 1.6
+  CameraSide: 1
+  FieldOfView: 65
+  NoiseProfile: {fileID: 11400000, guid: a3dacaec0287d7444b4bd276816e1666, type: 2}
+  NoiseAmplitude: 0.15
+  NoiseFrequency: 0.5
