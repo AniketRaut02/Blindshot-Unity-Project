@@ -25,6 +25,8 @@
 using UnityEngine;
 using SciFiGame.Input;
 using SciFiGame.Core;
+using SciFiGame.Player;
+using SciFiGame.Laser;
 
 namespace SciFiGame.Camera
 {
@@ -48,6 +50,13 @@ namespace SciFiGame.Camera
         [SerializeField] private float _pitchMax =  20f;   // upward limit
         [SerializeField] private float _pitchMin = -35f;   // downward limit
 
+        [Header("Crouch Tracking")]
+        [Tooltip("Reference to read the crouch blend state.")]
+        [SerializeField] private PlayerMovementComponent _playerMovement;
+
+        [Tooltip("How far down the camera root moves when fully crouching.")]
+        [SerializeField] private float _crouchDropOffset = 0.5f; // Consider moving this to CameraSettingsData later!
+
         // ---------------------------------------------------------------------------
         // State
         // ---------------------------------------------------------------------------
@@ -55,6 +64,7 @@ namespace SciFiGame.Camera
         private float _yaw;
         private float _pitch;
         private bool  _inputEnabled = true;
+        private float _initialRootY;
 
         // ---------------------------------------------------------------------------
         // Unity lifecycle
@@ -67,6 +77,9 @@ namespace SciFiGame.Camera
             Vector3 euler = _cameraRoot.eulerAngles;
             _yaw   = euler.y;
             _pitch = euler.x > 180f ? euler.x - 360f : euler.x; // normalise to [-180,180]
+
+            // Cache the starting Y position
+            _initialRootY = _cameraRoot.localPosition.y;
         }
 
         private void OnEnable()
@@ -74,7 +87,10 @@ namespace SciFiGame.Camera
             _inputReader.OnLookInput += HandleLookInput;
             GameEvents.OnQTEStarted += OnQTEStarted;
             GameEvents.OnQTESucceeded += OnQTEEnded;
-            GameEvents.OnQTEFailed += OnQTEEnded;
+            //GameEvents.OnQTEFailed += OnQTEEnded;
+            GameEvents.OnPlayerRespawned += OnPlayerRespawned;
+            // FIX: Subscribe to death event
+            GameEvents.OnPlayerDied += OnPlayerDied;
 
             Cursor.lockState = CursorLockMode.Locked;
             Cursor.visible   = false;
@@ -85,8 +101,11 @@ namespace SciFiGame.Camera
             _inputReader.OnLookInput -= HandleLookInput;
             GameEvents.OnQTEStarted -= OnQTEStarted;
             GameEvents.OnQTESucceeded -= OnQTEEnded;
-            GameEvents.OnQTEFailed -= OnQTEEnded;
+            // GameEvents.OnQTEFailed -= OnQTEEnded;
+            GameEvents.OnPlayerRespawned -= OnPlayerRespawned;
 
+            // FIX: Unsubscribe from death event
+            GameEvents.OnPlayerDied -= OnPlayerDied;
             Cursor.lockState = CursorLockMode.None;
             Cursor.visible   = true;
         }
@@ -95,6 +114,7 @@ namespace SciFiGame.Camera
         {
             // Applied in LateUpdate so all movement has already been committed this frame.
             ApplyRotation();
+            ApplyCrouchDrop();
         }
 
         // ---------------------------------------------------------------------------
@@ -119,12 +139,35 @@ namespace SciFiGame.Camera
             _cameraRoot.rotation = Quaternion.Euler(_pitch, _yaw, 0f);
         }
 
+        // ------------------------------------------
+        // Crouch Drop
+        //------------------------------------------
+        private void ApplyCrouchDrop()
+        {
+            if (_playerMovement == null) return;
+
+            Vector3 localPos = _cameraRoot.localPosition;
+            // Smoothly drop the camera based on the exact same 0-1 blend the Animator uses
+            localPos.y = Mathf.Lerp(_initialRootY, _initialRootY - _crouchDropOffset, _playerMovement.CrouchBlend);
+            _cameraRoot.localPosition = localPos;
+        }
+
         // ---------------------------------------------------------------------------
         // Event handlers — disable look during Timeline/QTE
         // ---------------------------------------------------------------------------
 
         private void OnQTEStarted(QTEZonePayload _)   => _inputEnabled = false;
         private void OnQTEEnded(QTEZonePayload _)      => _inputEnabled = true;
+
+        private void OnPlayerRespawned(CheckpointPayload _)
+        {
+            _inputEnabled = true;
+        }
+
+        private void OnPlayerDied(PlayerDeathPayload _)
+        {
+            _inputEnabled = false;
+        }
 
         // ---------------------------------------------------------------------------
         // Public accessors — RotationComponent reads yaw to rotate the character.

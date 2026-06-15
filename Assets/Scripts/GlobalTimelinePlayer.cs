@@ -19,7 +19,14 @@ namespace SciFiGame.Timeline
             if (asset == null)
                 return;
 
+            _director.Stop();
+
+            _director.time = 0;
+
             _director.playableAsset = asset;
+
+            _director.Evaluate();
+
             _director.Play();
         }
     }

@@ -23,6 +23,7 @@
 
 using UnityEngine;
 using SciFiGame.Core;
+using SciFiGame.Laser;
 
 namespace SciFiGame.Player
 {
@@ -220,5 +221,7 @@ namespace SciFiGame.Player
             transform.SetPositionAndRotation(p.RespawnPosition, p.RespawnRotation);
             _cc.enabled = true;
         }
+
+       
     }
 }

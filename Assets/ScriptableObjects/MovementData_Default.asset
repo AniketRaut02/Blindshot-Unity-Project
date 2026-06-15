@@ -19,8 +19,8 @@ MonoBehaviour:
   CrouchTransitionTime: 0.25
   GroundedGravity: -2
   AirGravity: -20
-  StandHeight: 1.8
-  StandCenterY: 0.9
-  CrouchHeight: 1
-  CrouchCenterY: 0.5
+  StandHeight: 2
+  StandCenterY: 1
+  CrouchHeight: 1.4
+  CrouchCenterY: 0.7
   RotationSpeed: 720

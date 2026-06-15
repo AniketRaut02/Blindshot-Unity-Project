@@ -19,6 +19,7 @@
 using UnityEngine;
 using SciFiGame.Input;
 using SciFiGame.Core;
+using SciFiGame.Laser;
 
 namespace SciFiGame.Player
 {
@@ -58,7 +59,10 @@ namespace SciFiGame.Player
 
             GameEvents.OnQTEStarted   += OnQTEStarted;
             GameEvents.OnQTESucceeded += OnQTEEnded;
-            GameEvents.OnQTEFailed    += OnQTEEnded;
+            // GameEvents.OnQTEFailed    += OnQTEEnded;
+            GameEvents.OnPlayerRespawned += OnPlayerRespawned;
+            // FIX: Subscribe to death event
+            GameEvents.OnPlayerDied += OnPlayerDied;
         }
 
         private void OnDisable()
@@ -70,7 +74,10 @@ namespace SciFiGame.Player
 
             GameEvents.OnQTEStarted   -= OnQTEStarted;
             GameEvents.OnQTESucceeded -= OnQTEEnded;
-            GameEvents.OnQTEFailed    -= OnQTEEnded;
+            //GameEvents.OnQTEFailed    -= OnQTEEnded;
+            GameEvents.OnPlayerRespawned -= OnPlayerRespawned;
+            // FIX: Unsubscribe from death event
+            GameEvents.OnPlayerDied -= OnPlayerDied;
         }
 
         private void LateUpdate()
@@ -103,7 +110,18 @@ namespace SciFiGame.Player
             LookInput     = Vector2.zero;
             CrouchHeld    = false;
         }
-
+        private void OnPlayerRespawned(CheckpointPayload _)
+        {
+            _inputEnabled = true;
+        }
         private void OnQTEEnded(QTEZonePayload _) => _inputEnabled = true;
+
+        private void OnPlayerDied(PlayerDeathPayload _)
+        {
+            _inputEnabled = false;
+            MoveInput = Vector2.zero;
+            LookInput = Vector2.zero;
+            CrouchHeld = false;
+        }
     }
 }

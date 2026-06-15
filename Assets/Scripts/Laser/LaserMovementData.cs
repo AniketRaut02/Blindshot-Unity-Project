@@ -71,6 +71,8 @@ namespace SciFiGame.Laser
 
         VerticalPingPong,
 
+        YAxisPingPong,
+
         Rotation,
 
         Flashing

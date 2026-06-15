@@ -39,11 +39,9 @@ namespace SciFiGame.Laser
         // Event handlers
         // ---------------------------------------------------------------------------
 
-        private void OnLaserHit(
-            LaserHitPayload payload)
+        private void OnLaserHit(LaserHitPayload payload)
         {
-            Debug.Log(
-                $"Player killed by laser: {payload.BeamName}");
+            Debug.Log( $"Player killed by laser: {payload.BeamName}");
 
             GameEvents.RaisePlayerDied(
                 new PlayerDeathPayload( _deathTimeline));

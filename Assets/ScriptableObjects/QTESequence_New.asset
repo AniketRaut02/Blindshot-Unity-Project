@@ -13,13 +13,13 @@ MonoBehaviour:
   m_Name: QTESequence_New
   m_EditorClassIdentifier: 
   SequenceName: Slide
-  InputType: 0
-  ActionName: Confirm
+  InputType: 1
+  ActionName: Hold
   Steps: []
-  TimeLimit: 2.5
-  HoldTolerance: 0.9
+  TimeLimit: 5
+  HoldTolerance: 0.5
   MashThreshold: 8
   PromptIcon: {fileID: 10913, guid: 0000000000000000f000000000000000, type: 0}
-  SuccessDirector: {fileID: 11400000, guid: 23092603d84099743b7e357db70aa3dc, type: 2}
-  FailureDirector: {fileID: 11400000, guid: 23092603d84099743b7e357db70aa3dc, type: 2}
+  SuccessDirector: {fileID: 11400000, guid: 4f6d5e75aa4d5874990f22c4d36cbd64, type: 2}
+  FailureDirector: {fileID: 11400000, guid: 4f6d5e75aa4d5874990f22c4d36cbd64, type: 2}
   FailureOutcome: 0

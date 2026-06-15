@@ -14,8 +14,8 @@
 // ONE-SHOT:
 // By default the zone deactivates its collider after the first trigger so it
 // cannot be re-entered mid-sequence. Set AllowReactivation = true for zones that
-// can reset (e.g., training rooms). The zone listens for OnQTEFailed to know
-// whether to re-arm itself.
+// can reset (e.g., training rooms). The zone listens for OnPlayerRespawned to know
+// whether to re-arm itself after a death/failure.
 //
 // TAG:
 // The zone compares the collider tag to "Player" to avoid responding to physics
@@ -36,7 +36,7 @@ namespace SciFiGame.QTE
         [Tooltip("The QTE sequence this zone initiates.")]
         [SerializeField] private QTESequenceData _sequenceData;
 
-        [Tooltip("If true, the zone re-arms itself after a failed QTE so the player can retry.")]
+        [Tooltip("If true, the zone re-arms itself after a player death/respawn so they can retry.")]
         [SerializeField] private bool _allowReactivation = true;
 
         // ---------------------------------------------------------------------------
@@ -44,7 +44,8 @@ namespace SciFiGame.QTE
         // ---------------------------------------------------------------------------
 
         private Collider _collider;
-        private bool     _triggered;
+        private bool _triggered;
+        private bool _isCompleted; // Tracks if the player successfully beat it
 
         // ---------------------------------------------------------------------------
         // Lifecycle
@@ -52,7 +53,7 @@ namespace SciFiGame.QTE
 
         private void Awake()
         {
-            _collider           = GetComponent<Collider>();
+            _collider = GetComponent<Collider>();
             _collider.isTrigger = true;
 
             if (_sequenceData == null)
@@ -61,13 +62,14 @@ namespace SciFiGame.QTE
 
         private void OnEnable()
         {
-            GameEvents.OnQTEFailed    += OnQTEFailed;
+            // FIX: Listen for respawns instead of the deprecated OnQTEFailed event
+            GameEvents.OnPlayerRespawned += OnPlayerRespawned;
             GameEvents.OnQTESucceeded += OnQTESucceeded;
         }
 
         private void OnDisable()
         {
-            GameEvents.OnQTEFailed    -= OnQTEFailed;
+            GameEvents.OnPlayerRespawned -= OnPlayerRespawned;
             GameEvents.OnQTESucceeded -= OnQTESucceeded;
         }
 
@@ -77,12 +79,12 @@ namespace SciFiGame.QTE
 
         private void OnTriggerEnter(Collider other)
         {
-            if (_triggered)               return;
-            if (_sequenceData == null)    return;
+            if (_triggered) return;
+            if (_sequenceData == null) return;
             if (!other.CompareTag("Player")) return;
 
-            _triggered         = true;
-            _collider.enabled  = false;   // prevent re-trigger mid-sequence
+            _triggered = true;
+            _collider.enabled = false;   // prevent re-trigger mid-sequence
 
             GameEvents.RaisePlayerEnteredQTEZone(new QTEZonePayload(_sequenceData));
         }
@@ -91,21 +93,25 @@ namespace SciFiGame.QTE
         // Event handlers
         // ---------------------------------------------------------------------------
 
-        private void OnQTEFailed(QTEZonePayload payload)
+        private void OnPlayerRespawned(CheckpointPayload _)
         {
-            // Only re-arm if this zone's sequence failed and reactivation is allowed.
-            if (payload.SequenceData != _sequenceData) return;
-            if (!_allowReactivation) return;
+            // If the player already beat this specific QTE, leave it permanently disabled.
+            if (_isCompleted) return;
 
-            _triggered        = false;
-            _collider.enabled = true;
+            // If they died/failed and reactivation is allowed, re-arm the zone!
+            if (_allowReactivation)
+            {
+                _triggered = false;
+                _collider.enabled = true;
+            }
         }
 
         private void OnQTESucceeded(QTEZonePayload payload)
         {
-            // Successful QTE — this zone stays permanently disabled.
+            // Successful QTE — this zone is now permanently beaten.
             if (payload.SequenceData != _sequenceData) return;
-            _triggered = true;
+
+            _isCompleted = true;
         }
     }
 }

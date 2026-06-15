@@ -20,6 +20,7 @@
 
 using UnityEngine;
 using SciFiGame.Core;
+using SciFiGame.Laser;
 
 namespace SciFiGame.Player
 {
@@ -29,7 +30,7 @@ namespace SciFiGame.Player
         // Inspector
         // ---------------------------------------------------------------------------
 
-        [SerializeField] private MovementData          _data;
+        [SerializeField] private MovementData _data;
         [SerializeField] private PlayerMovementComponent _movement;
 
         // ---------------------------------------------------------------------------
@@ -44,16 +45,21 @@ namespace SciFiGame.Player
 
         private void OnEnable()
         {
-            GameEvents.OnQTEStarted   += OnQTEStarted;
+            GameEvents.OnQTEStarted += OnQTEStarted;
             GameEvents.OnQTESucceeded += OnQTEEnded;
-            GameEvents.OnQTEFailed    += OnQTEEnded;
+
+            // FIX: Ensure rotation is disabled on death and restored on respawn
+            GameEvents.OnPlayerDied += OnPlayerDied;
+            GameEvents.OnPlayerRespawned += OnPlayerRespawned;
         }
 
         private void OnDisable()
         {
-            GameEvents.OnQTEStarted   -= OnQTEStarted;
+            GameEvents.OnQTEStarted -= OnQTEStarted;
             GameEvents.OnQTESucceeded -= OnQTEEnded;
-            GameEvents.OnQTEFailed    -= OnQTEEnded;
+
+            GameEvents.OnPlayerDied -= OnPlayerDied;
+            GameEvents.OnPlayerRespawned -= OnPlayerRespawned;
         }
 
         private void Update()
@@ -66,7 +72,7 @@ namespace SciFiGame.Player
             if (moveDir.sqrMagnitude < 0.001f) return;   // idle — preserve current rotation
 
             Quaternion targetRot = Quaternion.LookRotation(moveDir.normalized, Vector3.up);
-            transform.rotation   = Quaternion.RotateTowards(
+            transform.rotation = Quaternion.RotateTowards(
                 transform.rotation,
                 targetRot,
                 _data.RotationSpeed * Time.deltaTime);
@@ -76,8 +82,12 @@ namespace SciFiGame.Player
         // Event handlers
         // ---------------------------------------------------------------------------
 
-        // During QTEs the Timeline owns root motion and rotation — we step aside.
-        private void OnQTEStarted(QTEZonePayload _)   => _rotationEnabled = false;
-        private void OnQTEEnded(QTEZonePayload _)      => _rotationEnabled = true;
+        // During QTEs or Death, the Timeline owns root motion and rotation — we step aside.
+        private void OnQTEStarted(QTEZonePayload _) => _rotationEnabled = false;
+        private void OnPlayerDied(PlayerDeathPayload _) => _rotationEnabled = false;
+
+        // Re-enable rotation when returning to standard gameplay
+        private void OnQTEEnded(QTEZonePayload _) => _rotationEnabled = true;
+        private void OnPlayerRespawned(CheckpointPayload _) => _rotationEnabled = true;
     }
 }

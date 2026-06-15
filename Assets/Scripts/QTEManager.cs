@@ -85,7 +85,20 @@ namespace SciFiGame.QTE
             _timer -= Time.deltaTime;
 
             if (_holdHeld)
+            {
                 _holdDuration += Time.deltaTime;
+
+                // --- INSTANT SUCCESS EVALUATION FOR HOLD QTE ---
+                if (_activeData.InputType == QTEInputType.Hold)
+                {
+                    float requiredHoldTime = _activeData.TimeLimit * _activeData.HoldTolerance;
+                    if (_holdDuration >= requiredHoldTime)
+                    {
+                        Succeed();
+                        return; // Exit the loop early since the QTE is now over
+                    }
+                }
+            }
 
             if (_timer <= 0f)
                 OnTimerExpired();
@@ -151,75 +164,90 @@ namespace SciFiGame.QTE
         // Input handlers
         // ---------------------------------------------------------------------------
 
-        private void OnConfirm()
-        {
-            if (_activeData.InputType != QTEInputType.SinglePress) return;
-            GameEvents.RaiseQTEInputReceived(new QTEInputPayload(_activeData.ActionName));
-            Succeed();
-        }
+        private void OnConfirm() => HandleButtonPress(InputConstants.QTEConfirm);
+        private void OnMash() => HandleButtonPress(InputConstants.QTEMash);
+        private void OnLeft() => HandleButtonPress(InputConstants.QTELeft);
+        private void OnRight() => HandleButtonPress(InputConstants.QTERight);
+        private void OnJump() => HandleButtonPress(InputConstants.QTEJump);
 
-        private void OnHold(bool held)
+        private void OnHold(bool isHeld)
         {
             if (_activeData.InputType != QTEInputType.Hold) return;
-            _holdHeld = held;
-            GameEvents.RaiseQTEInputReceived(new QTEInputPayload(_activeData.ActionName, _holdDuration));
-        }
 
-        private void OnMash()
-        {
-            if (_activeData.InputType != QTEInputType.Mash) return;
-            _mashCount++;
-            GameEvents.RaiseQTEInputReceived(new QTEInputPayload(_activeData.ActionName, 0f, _mashCount));
-
-            if (_mashCount >= _activeData.MashThreshold)
-                Succeed();
-        }
-
-        private void OnLeft()  => HandleSequenceInput(InputConstants.QTELeft);
-        private void OnRight() => HandleSequenceInput(InputConstants.QTERight);
-        private void OnJump()  => HandleSequenceInput(InputConstants.QTEJump);
-
-        private void HandleSequenceInput(string actionName)
-        {
-            if (_activeData.InputType != QTEInputType.Sequence) return;
-            if (_sequenceIndex >= _activeData.Steps.Length) return;
-
-            QTESequenceStep expected = _activeData.Steps[_sequenceIndex];
-            GameEvents.RaiseQTEInputReceived(new QTEInputPayload(actionName));
-
-            if (actionName == expected.ActionName)
+            // Because InputReader only tracks button releases for the "Hold" action,
+            // Hold QTEs currently *must* use "Hold" as their ActionName.
+            if (_activeData.ActionName == InputConstants.QTEHold)
             {
-                _sequenceIndex++;
-                if (_sequenceIndex >= _activeData.Steps.Length)
-                    Succeed();
+                _holdHeld = isHeld;
+                if (isHeld)
+                {
+                    GameEvents.RaiseQTEInputReceived(new QTEInputPayload(_activeData.ActionName, _holdDuration));
+                }
             }
-            else
+        }
+
+        private void HandleButtonPress(string incomingAction)
+        {
+            if (!_isActive) return;
+
+            // --- 1. SEQUENCE QTE ---
+            if (_activeData.InputType == QTEInputType.Sequence)
             {
-                // Wrong key — reset step index (timer is still the failure condition).
-                _sequenceIndex = 0;
+                if (_sequenceIndex >= _activeData.Steps.Length) return;
+
+                QTESequenceStep expected = _activeData.Steps[_sequenceIndex];
+
+                if (incomingAction == expected.ActionName)
+                {
+                    // Correct key! Fire the event to turn the UI green, then advance.
+                    GameEvents.RaiseQTEInputReceived(new QTEInputPayload(incomingAction));
+                    _sequenceIndex++;
+
+                    if (_sequenceIndex >= _activeData.Steps.Length)
+                        Succeed();
+                }
+                else
+                {
+                    // Wrong key! Reset step index silently (UI will not advance).
+                    _sequenceIndex = 0;
+                }
+                return;
+            }
+
+            // --- 2. SINGLE PRESS QTE ---
+            if (_activeData.InputType == QTEInputType.SinglePress)
+            {
+                if (incomingAction == _activeData.ActionName)
+                {
+                    GameEvents.RaiseQTEInputReceived(new QTEInputPayload(incomingAction));
+                    Succeed();
+                }
+                return;
+            }
+
+            // --- 3. MASH QTE ---
+            if (_activeData.InputType == QTEInputType.Mash)
+            {
+                if (incomingAction == _activeData.ActionName)
+                {
+                    _mashCount++;
+                    GameEvents.RaiseQTEInputReceived(new QTEInputPayload(incomingAction, 0f, _mashCount));
+
+                    if (_mashCount >= _activeData.MashThreshold)
+                        Succeed();
+                }
+                return;
             }
         }
 
         // ---------------------------------------------------------------------------
         // Timer expiry
         // ---------------------------------------------------------------------------
-
         private void OnTimerExpired()
         {
-            switch (_activeData.InputType)
-            {
-                case QTEInputType.Hold:
-                    float required = _activeData.TimeLimit * _activeData.HoldTolerance;
-                    if (_holdDuration >= required)
-                        Succeed();
-                    else
-                        Fail();
-                    break;
-
-                default:
-                    Fail();
-                    break;
-            }
+            // Because Hold QTEs now evaluate and succeed instantly in Update(),
+            // if the timer runs out on ANY QTE type, it means the player failed the requirement.
+            Fail();
         }
 
         // ---------------------------------------------------------------------------
@@ -240,12 +268,10 @@ namespace SciFiGame.QTE
         private void Fail()
         {
             if (!_isActive) return;
-            EndQTE();
 
+            EndQTE();
             GameEvents.RaisePlayerDied( new PlayerDeathPayload( _activeData.FailureDirector));
 
-            if (_activeData.FailureDirector != null)
-                PlayDirector(_director,_activeData.FailureDirector);
         }
 
         private void EndQTE()

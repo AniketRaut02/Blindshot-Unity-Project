@@ -5,6 +5,8 @@
 // LaserMovementComponent handles transform animation and flashing.
 //
 // The behaviour is fully driven by LaserMovementData assets.
+// Instance-level timing offsets are exposed here to allow identical lasers
+// to run out of sync (creating staggered patterns).
 
 using UnityEngine;
 
@@ -16,9 +18,16 @@ namespace SciFiGame.Laser
         // Inspector
         // ---------------------------------------------------------------------------
 
+        [Header("Data Profile")]
         [SerializeField]
         private LaserMovementData _movementData;
 
+        [Header("Instance Settings")]
+        [Tooltip("Add a unique number here (e.g., 1, 2, 3.14) to stagger this laser's movement so it doesn't sync perfectly with others using the same Data Profile.")]
+        [SerializeField]
+        private float _localPhaseOffset = 0f;
+
+        [Header("References")]
         [SerializeField]
         private Collider _laserCollider;
 
@@ -68,6 +77,10 @@ namespace SciFiGame.Laser
                     HandleVerticalMovement();
                     break;
 
+                case LaserMovementType.YAxisPingPong:
+                    HandleYAxisMovement();
+                    break;
+
                 case LaserMovementType.Rotation:
                     HandleRotation();
                     break;
@@ -83,7 +96,8 @@ namespace SciFiGame.Laser
         // --------------------------------------------------------------------------
         private void HandleHorizontalMovement()
         {
-            float time = Time.time + _movementData.PhaseOffset;
+            // Combine the shared SO offset with this instance's unique offset
+            float time = Time.time + _movementData.PhaseOffset + _localPhaseOffset;
 
             Vector3 position = _startLocalPosition;
 
@@ -96,16 +110,18 @@ namespace SciFiGame.Laser
 
         private void HandleVerticalMovement()
         {
-            float time = Time.time + _movementData.PhaseOffset;
+            // Combine the shared SO offset with this instance's unique offset
+            float time = Time.time + _movementData.PhaseOffset + _localPhaseOffset;
 
             Vector3 position = _startLocalPosition;
 
-            position.y +=
+            position.z +=
                 Mathf.Sin(time * _movementData.Speed)
                 * _movementData.Amplitude;
 
             transform.localPosition = position;
         }
+
         private void HandleRotation()
         {
             transform.Rotate(
@@ -113,7 +129,6 @@ namespace SciFiGame.Laser
                 _movementData.Speed * Time.deltaTime,
                 Space.Self);
         }
-
 
         // ---------------------------------------------------------------------------
         // Flashing
@@ -127,9 +142,12 @@ namespace SciFiGame.Laser
 
             if (!_delayFinished)
             {
+                // We can also use _localPhaseOffset here to stagger flashing delays!
+                float totalDelay = _movementData.InitialDelay + _localPhaseOffset;
+
                 _delayTimer += Time.deltaTime;
 
-                if (_delayTimer < _movementData.InitialDelay)
+                if (_delayTimer < totalDelay)
                     return;
 
                 _delayFinished = true;
@@ -163,6 +181,21 @@ namespace SciFiGame.Laser
             {
                 _laserCollider.enabled = _flashVisible;
             }
+        }
+
+        private void HandleYAxisMovement()
+        {
+            // Combine the shared SO offset with this instance's unique offset
+            float time = Time.time + _movementData.PhaseOffset + _localPhaseOffset;
+
+            Vector3 position = _startLocalPosition;
+
+            // Apply the sine wave to the Y axis
+            position.y +=
+                Mathf.Sin(time * _movementData.Speed)
+                * _movementData.Amplitude;
+
+            transform.localPosition = position;
         }
     }
 }

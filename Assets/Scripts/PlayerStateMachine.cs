@@ -1,28 +1,9 @@
 // PlayerStateMachine.cs
 // Tracks the player's current PlayerState and raises GameEvents on transitions.
-//
-// DESIGN RATIONALE:
-// A dedicated state machine component prevents state drift — without it, multiple
-// components make independent decisions about what state the player is in, which
-// leads to contradictions (MovementComponent thinks "walking", AnimationComponent
-// thinks "idle"). Centralising state here means there is one authoritative answer.
-//
-// WHY NOT A FULL HSM OR BEHAVIOUR TREE?
-// For Phase 1 the state space is small (Idle, Walking, Crouching, CrouchWalking,
-// InQTE, Dead). A simple enum + transition guard is sufficient and vastly easier
-// to reason about. If Phase 2 grows the state space significantly, migrate to a
-// proper HSM at that point — not before.
-//
-// TRANSITION LOGIC:
-// The state machine reads from sibling components (MovementComponent, InputComponent)
-// each frame and determines the correct state. It does not hold references to
-// QTEManager or CheckpointManager — it learns about QTE lifecycle through events.
-//
-// Raising OnPlayerStateChanged lets any system (UI, audio, VFX) react to state
-// changes without needing to poll or reference this component.
 
 using UnityEngine;
 using SciFiGame.Core;
+using SciFiGame.Laser;
 
 namespace SciFiGame.Player
 {
@@ -33,7 +14,16 @@ namespace SciFiGame.Player
         // ---------------------------------------------------------------------------
 
         [SerializeField] private PlayerMovementComponent _movement;
-        [SerializeField] private PlayerInputComponent    _input;
+        [SerializeField] private PlayerInputComponent _input;
+
+        [Tooltip("The GameObject containing the CharacterController/Collider to be protected during QTEs.")]
+        [SerializeField] private GameObject _playerRoot;
+
+        private int _defaultLayer;
+        private int _invincibleLayer;
+
+        // Tracking variable to keep the shield up during cutscenes
+        private bool _isTimelinePlaying = false;
 
         // ---------------------------------------------------------------------------
         // Public state
@@ -45,31 +35,59 @@ namespace SciFiGame.Player
         // Lifecycle
         // ---------------------------------------------------------------------------
 
+        private void Awake()
+        {
+            if (_playerRoot != null)
+            {
+                _defaultLayer = _playerRoot.layer;
+            }
+            else
+            {
+                Debug.LogWarning("[PlayerStateMachine] _playerRoot is not assigned! Defaulting to layer 0.");
+                _defaultLayer = 0;
+            }
+
+            _invincibleLayer = LayerMask.NameToLayer("Invincible");
+
+            if (_invincibleLayer == -1)
+            {
+                Debug.LogError("[PlayerStateMachine] The 'Invincible' layer does not exist. Please add it in Tags and Layers.");
+            }
+        }
+
         private void OnEnable()
         {
-            GameEvents.OnQTEStarted      += OnQTEStarted;
-            GameEvents.OnQTESucceeded    += OnQTEEnded;
-            GameEvents.OnQTEFailed       += OnQTEFailed;
+            GameEvents.OnQTEStarted += OnQTEStarted;
+            GameEvents.OnQTESucceeded += OnQTEEnded;
+            GameEvents.OnPlayerDied += OnPlayerDied;
             GameEvents.OnPlayerRespawned += OnPlayerRespawned;
             GameEvents.OnLaserEntered += OnLaserEntered;
             GameEvents.OnLaserExited += OnLaserExited;
+
+            // FIX: Listen for timeline start/end to hold the invincibility shield
+            GameEvents.OnTimelineStarted += OnTimelineStarted;
+            GameEvents.OnTimelineFinished += OnTimelineFinished;
         }
 
         private void OnDisable()
         {
-            GameEvents.OnQTEStarted      -= OnQTEStarted;
-            GameEvents.OnQTESucceeded    -= OnQTEEnded;
-            GameEvents.OnQTEFailed       -= OnQTEFailed;
+            GameEvents.OnQTEStarted -= OnQTEStarted;
+            GameEvents.OnQTESucceeded -= OnQTEEnded;
+            GameEvents.OnPlayerDied -= OnPlayerDied;
             GameEvents.OnPlayerRespawned -= OnPlayerRespawned;
             GameEvents.OnLaserEntered -= OnLaserEntered;
             GameEvents.OnLaserExited -= OnLaserExited;
+
+            GameEvents.OnTimelineStarted -= OnTimelineStarted;
+            GameEvents.OnTimelineFinished -= OnTimelineFinished;
         }
 
         private void Update()
         {
-            // QTE and Dead states are driven by events, not frame polling.
+            // Lock out state polling if we are in a QTE, Dead, OR playing a cinematic Timeline
             if (CurrentState == PlayerState.InQTE) return;
-            if (CurrentState == PlayerState.Dead)  return;
+            if (CurrentState == PlayerState.Dead) return;
+            if (_isTimelinePlaying) return;
 
             PlayerState next = EvaluateState();
             if (next != CurrentState) Transition(next);
@@ -82,43 +100,70 @@ namespace SciFiGame.Player
         private PlayerState EvaluateState()
         {
             bool crouching = _movement.IsCrouching;
-            bool moving    = _movement.IsMoving;
+            bool moving = _movement.IsMoving;
 
-            if (crouching && moving)  return PlayerState.CrouchWalking;
-            if (crouching)            return PlayerState.Crouching;
-            if (moving)               return PlayerState.Walking;
+            if (crouching && moving) return PlayerState.CrouchWalking;
+            if (crouching) return PlayerState.Crouching;
+            if (moving) return PlayerState.Walking;
             return PlayerState.Idle;
         }
 
         // ---------------------------------------------------------------------------
-        // Transition
+        // Transition & Protection Logic
         // ---------------------------------------------------------------------------
 
         private void Transition(PlayerState next)
         {
             PlayerState previous = CurrentState;
-            CurrentState         = next;
+            CurrentState = next;
+
+            UpdatePhysicsLayer();
+
             GameEvents.RaisePlayerStateChanged(new PlayerStateChangedPayload(previous, next));
+        }
+
+        // Extracted so we can call it when Timelines start/stop without changing PlayerState
+        private void UpdatePhysicsLayer()
+        {
+            if (_playerRoot != null && _invincibleLayer != -1)
+            {
+                // Shield stays up if in a QTE, playing a Timeline, or Dead.
+                if (CurrentState == PlayerState.InQTE || _isTimelinePlaying || CurrentState == PlayerState.Dead)
+                {
+                    _playerRoot.layer = _invincibleLayer;
+                }
+                else
+                {
+                    _playerRoot.layer = _defaultLayer;
+                }
+            }
         }
 
         // ---------------------------------------------------------------------------
         // Event handlers
         // ---------------------------------------------------------------------------
 
-        private void OnQTEStarted(QTEZonePayload _)   => Transition(PlayerState.InQTE);
-        private void OnQTEEnded(QTEZonePayload _)      => Transition(PlayerState.Idle);
-        private void OnQTEFailed(QTEZonePayload _)     => Transition(PlayerState.Dead);
+        private void OnQTEStarted(QTEZonePayload _) => Transition(PlayerState.InQTE);
+        private void OnQTEEnded(QTEZonePayload _) => Transition(PlayerState.Idle);
         private void OnPlayerRespawned(CheckpointPayload _) => Transition(PlayerState.Idle);
 
+        private void OnLaserEntered() => Transition(PlayerState.InLaserZone);
+        private void OnLaserExited() => Transition(PlayerState.Idle);
+        private void OnPlayerDied(PlayerDeathPayload _) => Transition(PlayerState.Dead);
 
-        private void OnLaserEntered()
+        // Timeline Handlers
+        private void OnTimelineStarted(TimelinePayload _)
         {
-            Transition(PlayerState.InLaserZone);
+            _isTimelinePlaying = true;
+            UpdatePhysicsLayer();
         }
 
-        private void OnLaserExited()
+        private void OnTimelineFinished(TimelinePayload _)
         {
-            Transition(PlayerState.Idle);
+            _isTimelinePlaying = false;
+            UpdatePhysicsLayer();
+
+            // Just in case they finished a timeline but are floating in the air, let the next Update() figure out the state.
         }
     }
 }

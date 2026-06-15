@@ -39,6 +39,13 @@ namespace SciFiGame.Player
 
         [SerializeField] private PlayerMovementComponent _movement;
 
+        [Header("Dampening Settings")]
+        [Tooltip("Time it takes to smooth the speed value. Higher is slower.")]
+        [SerializeField] private float _speedDampTime = 0.1f;
+
+        [Tooltip("Time it takes to smooth the crouch blend. Higher is slower.")]
+        [SerializeField] private float _crouchDampTime = 0.1f;
+
         // ---------------------------------------------------------------------------
         // Private — cached hashes
         // ---------------------------------------------------------------------------
@@ -60,15 +67,16 @@ namespace SciFiGame.Player
 
         private void Update()
         {
-            // Normalise speed against walk speed so the blend tree range is always 0–1
-            // regardless of the MovementData values a designer chooses.
-            float normSpeed = _movement.HorizontalSpeed > 0.01f ? 1f : 0f;
+            // Determine the target speed (0 or 1)
+            float targetSpeed = _movement.HorizontalSpeed > 0.01f ? 1f : 0f;
 
-            _animator.SetFloat(SpeedHash,       normSpeed);
-            _animator.SetFloat(CrouchBlendHash, _movement.CrouchBlend);
-            _animator.SetBool(IsGroundedHash,   true); // Phase 1: always grounded
+            // Apply the values using the built-in dampening overload
+            _animator.SetFloat(SpeedHash, targetSpeed, _speedDampTime, Time.deltaTime);
+            _animator.SetFloat(CrouchBlendHash, _movement.CrouchBlend, _crouchDampTime, Time.deltaTime);
+
+            _animator.SetBool(IsGroundedHash, true); // Phase 1: always grounded
         }
-
+/*
         // ---------------------------------------------------------------------------
         // Public — called by PlayerStateMachine for state-driven animation triggers
         // ---------------------------------------------------------------------------
@@ -78,6 +86,6 @@ namespace SciFiGame.Player
             _animator.SetTrigger(triggerName);
         }
 
-        public Animator GetAnimator() => _animator;
+        public Animator GetAnimator() => _animator;*/
     }
 }
