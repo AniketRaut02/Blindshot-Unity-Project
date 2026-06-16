@@ -18,5 +18,5 @@ MonoBehaviour:
   PhaseOffset: 70
   RotationAxis: {x: 0, y: 0, z: 180}
   OnDuration: 1
-  OffDuration: 0.5
+  OffDuration: 1
   InitialDelay: 0

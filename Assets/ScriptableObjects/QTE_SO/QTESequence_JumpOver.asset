@@ -12,14 +12,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5718f5bcd3c137249b993433cc01a534, type: 3}
   m_Name: QTESequence_JumpOver
   m_EditorClassIdentifier: 
-  SequenceName: JumpOver
-  InputType: 2
-  ActionName: Mash
+  SequenceName: Press to JumpOver
+  InputType: 0
+  ActionName: Confirm
   Steps: []
   TimeLimit: 3
   HoldTolerance: 0.5
   MashThreshold: 8
-  PromptIcon: {fileID: 21300000, guid: 2de94e7d51b53144ebf574a7637a9233, type: 3}
+  PromptIcon: {fileID: 21300000, guid: 69da02ec34c73624b91727759ad616df, type: 3}
   SuccessDirector: {fileID: 11400000, guid: 70e3629e6d255584193317be78a6d803, type: 2}
   FailureDirector: {fileID: 11400000, guid: 4f6d5e75aa4d5874990f22c4d36cbd64, type: 2}
   FailureOutcome: 0

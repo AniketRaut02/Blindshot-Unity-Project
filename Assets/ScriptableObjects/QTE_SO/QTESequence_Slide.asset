@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5718f5bcd3c137249b993433cc01a534, type: 3}
   m_Name: QTESequence_Slide
   m_EditorClassIdentifier: 
-  SequenceName: JumpOver
+  SequenceName: Press to Slide
   InputType: 0
   ActionName: Confirm
   Steps: []
