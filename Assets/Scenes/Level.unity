@@ -3696,8 +3696,8 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 330585543}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0.8191521, z: -0, w: -0.5735764}
-  m_LocalPosition: {x: -18.91233, y: 1.9600017, z: 12.182315}
+  m_LocalRotation: {x: 0.019265525, y: 0.9357263, z: 0.05169811, w: -0.34838554}
+  m_LocalPosition: {x: -19.913456, y: 1.7882885, z: 13.125148}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -4166,6 +4166,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: LaserPrefab (5)
       objectReference: {fileID: 0}
+    - target: {fileID: 4256241738481775244, guid: a91e8c6506a86c54f8b649d6456f576c, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 4794980661196776035, guid: a91e8c6506a86c54f8b649d6456f576c, type: 3}
       propertyPath: _maxLength
       value: 10
@@ -4237,6 +4241,10 @@ PrefabInstance:
     - target: {fileID: 7754034503055827809, guid: a91e8c6506a86c54f8b649d6456f576c, type: 3}
       propertyPath: m_Size.z
       value: 10
+      objectReference: {fileID: 0}
+    - target: {fileID: 7754034503055827809, guid: a91e8c6506a86c54f8b649d6456f576c, type: 3}
+      propertyPath: m_Enabled
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 7754034503055827809, guid: a91e8c6506a86c54f8b649d6456f576c, type: 3}
       propertyPath: m_Center.z
@@ -8369,8 +8377,8 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 758247990}
   serializedVersion: 2
-  m_LocalRotation: {x: -0, y: 0.8191521, z: -0, w: -0.5735764}
-  m_LocalPosition: {x: -18.91233, y: 1.9600017, z: 12.182315}
+  m_LocalRotation: {x: 0.019265525, y: 0.9357263, z: 0.05169811, w: -0.34838554}
+  m_LocalPosition: {x: -19.913456, y: 1.7882885, z: 13.125148}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -11462,6 +11470,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: LaserPrefab (4)
       objectReference: {fileID: 0}
+    - target: {fileID: 4256241738481775244, guid: a91e8c6506a86c54f8b649d6456f576c, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 4794980661196776035, guid: a91e8c6506a86c54f8b649d6456f576c, type: 3}
       propertyPath: _maxLength
       value: 10
@@ -11536,7 +11548,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7754034503055827809, guid: a91e8c6506a86c54f8b649d6456f576c, type: 3}
       propertyPath: m_Enabled
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 7754034503055827809, guid: a91e8c6506a86c54f8b649d6456f576c, type: 3}
       propertyPath: m_Center.z
@@ -12633,7 +12645,7 @@ CharacterController:
   m_Enabled: 1
   serializedVersion: 3
   m_Height: 2
-  m_Radius: 0.4
+  m_Radius: 0.3
   m_SlopeLimit: 45
   m_StepOffset: 0.3
   m_SkinWidth: 0.08
@@ -12647,8 +12659,8 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1173779044}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0.8191521, z: -0, w: -0.5735764}
-  m_LocalPosition: {x: -20.317377, y: 0.09000164, z: 10.925994}
+  m_LocalRotation: {x: 0.019265525, y: 0.9357263, z: 0.05169811, w: -0.34838554}
+  m_LocalPosition: {x: -20.54, y: 0.096089125, z: 11.33}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -16628,6 +16640,10 @@ PrefabInstance:
     - target: {fileID: 4256241738481775244, guid: a91e8c6506a86c54f8b649d6456f576c, type: 3}
       propertyPath: m_Name
       value: LaserPrefab (1)
+      objectReference: {fileID: 0}
+    - target: {fileID: 4256241738481775244, guid: a91e8c6506a86c54f8b649d6456f576c, type: 3}
+      propertyPath: m_IsActive
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 4794980661196776035, guid: a91e8c6506a86c54f8b649d6456f576c, type: 3}
       propertyPath: _maxLength

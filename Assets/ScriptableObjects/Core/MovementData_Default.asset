@@ -21,6 +21,6 @@ MonoBehaviour:
   AirGravity: -20
   StandHeight: 2
   StandCenterY: 1
-  CrouchHeight: 1.4
+  CrouchHeight: 1.35
   CrouchCenterY: 0.7
   RotationSpeed: 720
