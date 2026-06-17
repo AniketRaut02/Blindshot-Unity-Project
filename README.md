@@ -1,6 +1,8 @@
 # Sci-Fi Action/Stealth Game Framework
 
 A robust, data-driven, and highly decoupled framework for a 3D Sci-Fi Action/Stealth game in Unity. This project is built utilizing a strict event-driven architecture, ScriptableObjects for configuration, and the New Unity Input System.
+* Find Detailed Techincal Document in the Files here.
+* https://github.com/AniketRaut02/Blindshot-Unity-Project/blob/main/Technical%20Documentation.pdf
 
 ## 🚀 Key Features
 
